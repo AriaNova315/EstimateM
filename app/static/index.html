@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EstimateM</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; font-size: 13px; background: #f5f5f5; color: #333; }
+    a { color: #1677ff; text-decoration: none; }
+
+    /* header */
+    .header { background: #1a2540; color: #fff; padding: 0 20px; display: flex; align-items: center; gap: 16px; height: 48px; }
+    .header h1 { font-size: 16px; font-weight: 600; letter-spacing: 1px; flex-shrink: 0; }
+    .header select { height: 30px; padding: 0 8px; border: 1px solid #3a4a70; border-radius: 4px; background: #253060; color: #fff; font-size: 13px; min-width: 220px; }
+    .header select option { background: #253060; }
+    .btn-sm { height: 28px; padding: 0 12px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; white-space: nowrap; }
+    .btn-primary { background: #1677ff; color: #fff; }
+    .btn-primary:hover { background: #0958d9; }
+    .btn-danger { background: #ff4d4f; color: #fff; }
+    .btn-danger:hover { background: #d9363e; }
+    .btn-default { background: #fff; color: #333; border: 1px solid #d9d9d9; }
+    .btn-default:hover { border-color: #1677ff; color: #1677ff; }
+    .btn-success { background: #52c41a; color: #fff; }
+    .btn-success:hover { background: #389e0d; }
+
+    /* tabs */
+    .tabs { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 0 20px; display: flex; gap: 0; }
+    .tab-btn { padding: 12px 20px; cursor: pointer; border: none; background: none; font-size: 13px; color: #666; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .15s; }
+    .tab-btn:hover { color: #1677ff; }
+    .tab-btn.active { color: #1677ff; border-bottom-color: #1677ff; font-weight: 500; }
+
+    /* main content */
+    .content { padding: 16px 20px; }
+    .section-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #1a2540; }
+    .section { background: #fff; border-radius: 6px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+
+    /* form */
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px 24px; }
+    .form-item label { display: block; font-size: 12px; color: #888; margin-bottom: 4px; }
+    .form-item input, .form-item select { width: 100%; height: 30px; padding: 0 8px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 13px; outline: none; }
+    .form-item input:focus, .form-item select:focus { border-color: #1677ff; }
+    .form-actions { margin-top: 16px; display: flex; gap: 8px; }
+
+    /* table */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { background: #fafafa; color: #666; font-weight: 500; padding: 8px 10px; border: 1px solid #e8e8e8; text-align: left; white-space: nowrap; }
+    td { padding: 6px 10px; border: 1px solid #f0f0f0; vertical-align: middle; }
+    tr:hover td { background: #f9fbff; }
+    td input[type=number], td input[type=text] { width: 100%; border: 1px solid #d9d9d9; border-radius: 3px; padding: 2px 6px; font-size: 12px; height: 24px; outline: none; }
+    td input:focus { border-color: #1677ff; }
+    .saving { color: #888; font-size: 11px; }
+    .saved { color: #52c41a; font-size: 11px; }
+    .save-err { color: #ff4d4f; font-size: 11px; }
+
+    /* task type badge */
+    .badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 500; }
+    .badge-phase    { background: #e6e6e6; color: #555; }
+    .badge-engineering { background: #e6f4ff; color: #0958d9; }
+    .badge-cm       { background: #e9f7ef; color: #389e0d; }
+    .badge-qa       { background: #fff7e6; color: #d46b08; }
+    .badge-review   { background: #f4e6ff; color: #7200c8; }
+    .badge-mgmt     { background: #e6fffb; color: #08979c; }
+    .badge-other    { background: #f5f5f5; color: #999; }
+
+    /* import area */
+    .import-area { display: flex; align-items: center; gap: 12px; padding: 12px; background: #fafafa; border: 1px dashed #d9d9d9; border-radius: 6px; margin-bottom: 14px; }
+    .import-area input[type=file] { font-size: 12px; }
+
+    /* session card */
+    .session-list { display: flex; flex-direction: column; gap: 8px; }
+    .session-card { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border: 1px solid #e8e8e8; border-radius: 6px; background: #fff; }
+    .session-card.active { border-color: #1677ff; background: #f0f5ff; }
+    .session-info { font-size: 12px; color: #666; }
+    .session-actions { display: flex; gap: 8px; }
+
+    /* toast */
+    .toast { position: fixed; top: 60px; right: 20px; padding: 10px 16px; border-radius: 6px; font-size: 13px; z-index: 999; box-shadow: 0 4px 12px rgba(0,0,0,.15); animation: slideIn .2s ease; }
+    .toast-success { background: #f6ffed; border: 1px solid #b7eb8f; color: #389e0d; }
+    .toast-error   { background: #fff2f0; border: 1px solid #ffccc7; color: #cf1322; }
+    .toast-info    { background: #e6f4ff; border: 1px solid #91caff; color: #0958d9; }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+    /* empty state */
+    .empty { text-align: center; padding: 40px; color: #aaa; font-size: 13px; }
+
+    /* filter bar */
+    .filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .filter-bar input { height: 30px; padding: 0 10px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 13px; width: 240px; outline: none; }
+    .filter-bar input:focus { border-color: #1677ff; }
+    .filter-bar select { height: 30px; padding: 0 8px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 13px; outline: none; }
+
+    /* sub-tabs */
+    .sub-tabs { display: flex; gap: 4px; margin-bottom: 14px; }
+    .sub-tab { padding: 5px 14px; border-radius: 4px; border: 1px solid #d9d9d9; cursor: pointer; font-size: 12px; background: #fff; color: #666; }
+    .sub-tab.active { background: #1677ff; color: #fff; border-color: #1677ff; }
+
+    /* new project modal */
+    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; display: flex; align-items: center; justify-content: center; }
+    .modal { background: #fff; border-radius: 8px; padding: 24px; width: 460px; max-width: 95vw; }
+    .modal h3 { margin-bottom: 16px; font-size: 15px; }
+    .modal .form-grid { grid-template-columns: 1fr; }
+
+    /* loading */
+    .loading { display: inline-block; width: 14px; height: 14px; border: 2px solid #e0e0e0; border-top-color: #1677ff; border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .text-muted { color: #aaa; }
+    .nowrap { white-space: nowrap; }
+    .wbs-col { font-family: monospace; }
+
+    /* estimate sub-section */
+    .est-section { margin-bottom: 20px; }
+    .est-section-title { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 8px; padding-left: 4px; border-left: 3px solid #1677ff; }
+  </style>
+</head>
+<body x-data="app()" x-init="init()">
+
+  <!-- Toast -->
+  <div x-show="toast.visible" x-transition class="toast" :class="`toast-${toast.type}`" x-text="toast.msg" style="display:none"></div>
+
+  <!-- Import from Excel Modal -->
+  <div class="modal-bg" x-show="showImportModal" style="display:none" @click.self="showImportModal=false">
+    <div class="modal">
+      <h3>从 Excel 新建项目</h3>
+      <p style="font-size:12px;color:#888;margin-bottom:16px;">
+        选择「项目相关信息表.xlsx」，系统将自动读取项目名称、编号、人员等信息并导入全部数据。
+      </p>
+      <div style="padding:20px;background:#fafafa;border:2px dashed #d9d9d9;border-radius:6px;text-align:center;">
+        <div style="font-size:24px;margin-bottom:8px;">📂</div>
+        <input type="file" accept=".xlsx" @change="importNewFile=$event.target.files[0]"
+          style="font-size:13px;">
+        <div x-show="importNewFile" x-text="importNewFile?.name"
+          style="margin-top:8px;font-size:12px;color:#1677ff;"></div>
+      </div>
+      <div class="form-actions" style="margin-top:16px;">
+        <button class="btn-sm btn-primary" @click="createFromExcel" :disabled="!importNewFile || importingNew">
+          <span x-show="importingNew" class="loading"></span>
+          <span x-text="importingNew ? ' 导入中…' : '导入并创建项目'"></span>
+        </button>
+        <button class="btn-sm btn-default" @click="showImportModal=false">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Project Modal (manual) -->
+  <div class="modal-bg" x-show="showNewProject" style="display:none" @click.self="showNewProject=false">
+    <div class="modal">
+      <h3>手动新建项目</h3>
+      <div class="form-grid">
+        <div class="form-item">
+          <label>项目名称 *</label>
+          <input x-model="newProject.name" placeholder="如：相控阵数字样机软件">
+        </div>
+        <div class="form-item">
+          <label>项目编号（后缀）*</label>
+          <input x-model="newProject.code" placeholder="如：03046">
+        </div>
+        <div class="form-item">
+          <label>项目负责人</label>
+          <input x-model="newProject.leader" placeholder="姓名">
+        </div>
+        <div class="form-item">
+          <label>CM负责人</label>
+          <input x-model="newProject.cm_manager">
+        </div>
+        <div class="form-item">
+          <label>QA负责人</label>
+          <input x-model="newProject.qa_manager">
+        </div>
+        <div class="form-item">
+          <label>项目组成员（逗号分隔）</label>
+          <input x-model="newProject.team_members" placeholder="张三,李四,王五,赵六">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-sm btn-primary" @click="createProject">创建</button>
+        <button class="btn-sm btn-default" @click="showNewProject=false">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <h1>EstimateM</h1>
+    <select x-model="pid" @change="onProjectChange">
+      <option value="">— 选择项目 —</option>
+      <template x-for="p in projects" :key="p.id">
+        <option :value="p.id" x-text="`${p.name}（ZDPX${p.code}）`"></option>
+      </template>
+    </select>
+    <button class="btn-sm btn-success" @click="showImportModal=true">从 Excel 导入</button>
+    <button class="btn-sm btn-primary" @click="showNewProject=true">+ 手动新建</button>
+    <div x-show="loading" class="loading"></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <template x-for="(label, i) in ['项目信息','配置项管理','进度计划','估算结果','生成导出']" :key="i">
+      <button class="tab-btn" :class="{active: tab === i+1}" @click="switchTab(i+1)" x-text="label"></button>
+    </template>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- No project selected -->
+    <div x-show="!pid" class="section">
+      <div class="empty">请先在顶部选择或新建项目</div>
+    </div>
+
+    <!-- ═══ Tab 1: 项目信息 ═══ -->
+    <div x-show="pid && tab===1">
+      <div class="section">
+        <div class="section-title">基本信息</div>
+        <div class="form-grid">
+          <div class="form-item">
+            <label>项目名称</label>
+            <input x-model="ep.name">
+          </div>
+          <div class="form-item">
+            <label>项目编号（ZDPX后缀）</label>
+            <input x-model="ep.code">
+          </div>
+          <div class="form-item">
+            <label>项目负责人</label>
+            <input x-model="ep.leader">
+          </div>
+          <div class="form-item">
+            <label>CM负责人</label>
+            <input x-model="ep.cm_manager">
+          </div>
+          <div class="form-item">
+            <label>QA负责人</label>
+            <input x-model="ep.qa_manager">
+          </div>
+          <div class="form-item">
+            <label>估算轮次</label>
+            <input x-model.number="ep.round" type="number" min="1">
+          </div>
+          <div class="form-item" style="grid-column: 1/-1">
+            <label>项目组成员（逗号分隔，用于识别资源名称中的组内成员）</label>
+            <input x-model="ep.team_members" placeholder="张三,李四,王五,赵六">
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">估算人员配置</div>
+        <div class="form-grid">
+          <div class="form-item" style="grid-column: 1/-1">
+            <label>文档规模估算人员（4人，逗号分隔）</label>
+            <input x-model="ee.doc" placeholder="张三,李四,王五,赵六">
+          </div>
+          <div class="form-item" style="grid-column: 1/-1">
+            <label>代码规模估算人员（4人，逗号分隔）</label>
+            <input x-model="ee.code" placeholder="张三,李四,王五,赵六">
+          </div>
+          <div class="form-item">
+            <label>CM估算负责人</label>
+            <input x-model="ee.cm">
+          </div>
+          <div class="form-item">
+            <label>QA估算负责人</label>
+            <input x-model="ee.qa">
+          </div>
+          <div class="form-item">
+            <label>管理类估算负责人</label>
+            <input x-model="ee.mgmt">
+          </div>
+          <div class="form-item">
+            <label>评审估算负责人</label>
+            <input x-model="ee.review">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-sm btn-primary" @click="saveProject">保存项目信息</button>
+      </div>
+    </div>
+
+    <!-- ═══ Tab 2: 配置项管理 ═══ -->
+    <div x-show="pid && tab===2">
+      <div class="section">
+        <div class="section-title">文档配置项</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>序号</th>
+                <th>配置项名称</th>
+                <th>标识</th>
+                <th>版本</th>
+                <th>类型</th>
+                <th>实际页数</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-if="configItems.length === 0">
+                <tr><td colspan="6" class="empty">暂无数据，请先在 Tab 3 导入 Excel</td></tr>
+              </template>
+              <template x-for="item in configItems" :key="item.id">
+                <tr>
+                  <td x-text="item.seq" class="text-muted"></td>
+                  <td x-text="item.name"></td>
+                  <td x-text="item.identifier" class="text-muted"></td>
+                  <td x-text="item.version" class="text-muted"></td>
+                  <td x-text="item.item_type" class="text-muted"></td>
+                  <td>
+                    <input type="number" :value="item.actual_pages"
+                      @change="updateConfigItem(item, 'actual_pages', +$event.target.value)">
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">代码模块</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>序号</th>
+                <th>模块名称</th>
+                <th>实际代码行数 (LOC)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-if="codeModules.length === 0">
+                <tr><td colspan="3" class="empty">暂无数据</td></tr>
+              </template>
+              <template x-for="m in codeModules" :key="m.id">
+                <tr>
+                  <td x-text="m.seq" class="text-muted"></td>
+                  <td x-text="m.name"></td>
+                  <td>
+                    <input type="number" :value="m.actual_loc"
+                      @change="updateCodeModule(m, +$event.target.value)">
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Tab 3: 进度计划 ═══ -->
+    <div x-show="pid && tab===3">
+      <div class="section">
+        <div class="import-area">
+          <span style="font-size:12px;color:#666;">导入项目相关信息表 (.xlsx)：</span>
+          <input type="file" accept=".xlsx" @change="importFile = $event.target.files[0]">
+          <button class="btn-sm btn-primary" @click="importExcel" :disabled="!importFile || importing">
+            <span x-show="importing" class="loading"></span>
+            <span x-text="importing ? ' 导入中…' : '导入'"></span>
+          </button>
+          <span x-show="importResult" x-text="importResult" style="font-size:12px;color:#52c41a;"></span>
+        </div>
+
+        <div class="filter-bar">
+          <input x-model="taskFilter" placeholder="搜索任务名称或WBS编号…">
+          <select x-model="taskTypeFilter">
+            <option value="">全部类型</option>
+            <option value="phase">phase</option>
+            <option value="engineering">engineering</option>
+            <option value="cm">cm</option>
+            <option value="qa">qa</option>
+            <option value="review">review</option>
+            <option value="mgmt">mgmt</option>
+            <option value="other">other</option>
+          </select>
+          <span style="color:#888;font-size:12px;" x-text="`共 ${filteredTasks.length} 条`"></span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>WBS</th>
+                <th>任务名称</th>
+                <th>类型</th>
+                <th>工期(天)</th>
+                <th>工作量(人时)</th>
+                <th>最新估算工作量</th>
+                <th>资源</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-if="filteredTasks.length === 0">
+                <tr><td colspan="7" class="empty">暂无数据</td></tr>
+              </template>
+              <template x-for="t in filteredTasks" :key="t.id">
+                <tr>
+                  <td class="wbs-col nowrap" x-text="t.wbs"></td>
+                  <td x-text="t.name"></td>
+                  <td>
+                    <span class="badge" :class="`badge-${t.task_type||'other'}`" x-text="t.task_type||'other'"></span>
+                  </td>
+                  <td x-text="t.duration_days ?? '—'" class="text-muted"></td>
+                  <td x-text="t.workload ?? '—'" class="text-muted"></td>
+                  <td x-text="t.latest_est_workload != null ? t.latest_est_workload : '—'" style="color:#1677ff;font-weight:500;"></td>
+                  <td x-text="t.resources ?? '—'" class="text-muted"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Tab 4: 估算结果 ═══ -->
+    <div x-show="pid && tab===4">
+      <!-- Session selector -->
+      <div class="section" style="padding:12px 16px;">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span style="font-size:12px;color:#666;">当前 Session：</span>
+          <select x-model="selectedSid" @change="loadSessionDetail" style="height:30px;padding:0 8px;border:1px solid #d9d9d9;border-radius:4px;font-size:13px;min-width:220px;">
+            <option value="">— 选择估算记录 —</option>
+            <template x-for="s in sessions" :key="s.id">
+              <option :value="s.id" x-text="`Session ${s.id}（${s.created_at}）`"></option>
+            </template>
+          </select>
+          <span x-show="!sessions.length" class="text-muted" style="font-size:12px;">暂无估算记录，请前往 Tab 5 生成</span>
+        </div>
+      </div>
+
+      <div x-show="!selectedSid || !sessionDetail">
+        <div class="empty">请先选择一个估算记录</div>
+      </div>
+
+      <template x-if="selectedSid && sessionDetail">
+        <div>
+          <!-- Sub-tabs -->
+          <div class="sub-tabs">
+            <button class="sub-tab" :class="{active: estTab===1}" @click="estTab=1">文档规模 &amp; 工程工作量</button>
+            <button class="sub-tab" :class="{active: estTab===2}" @click="estTab=2">代码规模</button>
+            <button class="sub-tab" :class="{active: estTab===3}" @click="estTab=3">CM / QA / 管理</button>
+            <button class="sub-tab" :class="{active: estTab===4}" @click="estTab=4">评审工作量</button>
+          </div>
+
+          <!-- Sub-tab 1: Sheet1 estimates -->
+          <div x-show="estTab===1" class="section">
+            <div class="section-title">文档规模及工程工作量估算（Sheet 1）</div>
+            <p style="font-size:11px;color:#aaa;margin-bottom:10px;">V1-V4 为可编辑估算值（页数或人时），修改后自动保存</p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>配置项/任务</th>
+                    <th>实际页数</th>
+                    <th>V1</th><th>V2</th><th>V3</th><th>V4</th>
+                    <th style="color:#1677ff;">规模均值</th>
+                    <th>工作量目标</th>
+                    <th>WL1</th><th>WL2</th><th>WL3</th><th>WL4</th>
+                    <th style="color:#1677ff;">工作量均值</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="row in sessionDetail.sheet1_estimates" :key="row.id">
+                    <tr>
+                      <td x-text="row.item_name"></td>
+                      <td x-text="row.actual_pages ?? '—'" class="text-muted"></td>
+                      <td><input type="number" :value="row.v1" @change="saveSheet1(row, 'v1', +$event.target.value)"></td>
+                      <td><input type="number" :value="row.v2" @change="saveSheet1(row, 'v2', +$event.target.value)"></td>
+                      <td><input type="number" :value="row.v3" @change="saveSheet1(row, 'v3', +$event.target.value)"></td>
+                      <td><input type="number" :value="row.v4" @change="saveSheet1(row, 'v4', +$event.target.value)"></td>
+                      <td x-text="avgScale(row) ?? '—'" style="color:#1677ff;font-weight:500;"></td>
+                      <td x-text="row.em_target ?? '—'" class="text-muted"></td>
+                      <td x-text="row.wl1 ?? '—'" class="text-muted"></td>
+                      <td x-text="row.wl2 ?? '—'" class="text-muted"></td>
+                      <td x-text="row.wl3 ?? '—'" class="text-muted"></td>
+                      <td x-text="row.wl4 ?? '—'" class="text-muted"></td>
+                      <td x-text="avgWorkload(row) ?? '—'" style="color:#1677ff;font-weight:500;"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Sub-tab 2: Code estimates -->
+          <div x-show="estTab===2" class="section">
+            <div class="section-title">代码规模及工作量估算（Sheet 2）</div>
+            <p style="font-size:11px;color:#aaa;margin-bottom:10px;">V1-V4 为可编辑估算值（LOC），修改后自动保存</p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>代码模块</th>
+                    <th>实际LOC</th>
+                    <th>V1</th><th>V2</th><th>V3</th><th>V4</th>
+                    <th style="color:#1677ff;">规模均值</th>
+                    <th>工作量目标</th>
+                    <th>WL1</th><th>WL2</th><th>WL3</th><th>WL4</th>
+                    <th style="color:#1677ff;">工作量均值</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="row in sessionDetail.code_scale_estimates" :key="row.id">
+                    <tr>
+                      <td x-text="row.module_name"></td>
+                      <td x-text="row.actual_loc ?? '—'" class="text-muted"></td>
+                      <td><input type="number" :value="row.v1" @change="saveCodeEst(row, 'v1', +$event.target.value)"></td>
+                      <td><input type="number" :value="row.v2" @change="saveCodeEst(row, 'v2', +$event.target.value)"></td>
+                      <td><input type="number" :value="row.v3" @change="saveCodeEst(row, 'v3', +$event.target.value)"></td>
+                      <td><input type="number" :value="row.v4" @change="saveCodeEst(row, 'v4', +$event.target.value)"></td>
+                      <td x-text="avgScale(row) ?? '—'" style="color:#1677ff;font-weight:500;"></td>
+                      <td x-text="row.em_target ?? '—'" class="text-muted"></td>
+                      <td x-text="row.wl1 ?? '—'" class="text-muted"></td>
+                      <td x-text="row.wl2 ?? '—'" class="text-muted"></td>
+                      <td x-text="row.wl3 ?? '—'" class="text-muted"></td>
+                      <td x-text="row.wl4 ?? '—'" class="text-muted"></td>
+                      <td x-text="avgWorkload(row) ?? '—'" style="color:#1677ff;font-weight:500;"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Sub-tab 3: Activity snapshots (CM / QA / Mgmt) -->
+          <div x-show="estTab===3" class="section">
+            <div class="section-title">活动工作量快照（CM / QA / 管理类）</div>
+            <p style="font-size:11px;color:#aaa;margin-bottom:10px;">工作量（人时）可直接编辑，修改后自动保存</p>
+
+            <template x-for="group in activityGroups" :key="group.type">
+              <div class="est-section">
+                <div class="est-section-title" x-text="group.label"></div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>阶段</th>
+                        <th>活动名称</th>
+                        <th>工作量（人时）</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <template x-for="row in group.rows" :key="row.id">
+                        <tr>
+                          <td x-text="row.phase_name ?? '—'" class="text-muted"></td>
+                          <td x-text="row.activity_name"></td>
+                          <td>
+                            <input type="number" step="0.5" :value="row.workload"
+                              @change="saveActivity(row, +$event.target.value)">
+                          </td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Sub-tab 4: Review snapshots -->
+          <div x-show="estTab===4" class="section">
+            <div class="section-title">评审工作量快照（Sheet 8）</div>
+            <p style="font-size:11px;color:#aaa;margin-bottom:10px;">参与人数和总工时可直接编辑，修改后自动保存</p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>评审活动</th>
+                    <th>参与人数</th>
+                    <th>总工时（人时）</th>
+                    <th>人均工时</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="row in sessionDetail.review_snapshots" :key="row.id">
+                    <tr>
+                      <td x-text="row.activity_name"></td>
+                      <td>
+                        <input type="number" min="0" :value="row.participants"
+                          @change="saveReview(row, 'participants', +$event.target.value)">
+                      </td>
+                      <td>
+                        <input type="number" step="0.5" :value="row.total_hours"
+                          @change="saveReview(row, 'total_hours', +$event.target.value)">
+                      </td>
+                      <td x-text="row.participants > 0 ? (row.total_hours / row.participants).toFixed(1) : '—'" class="text-muted"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <!-- ═══ Tab 5: 生成导出 ═══ -->
+    <div x-show="pid && tab===5">
+      <div class="section">
+        <div class="section-title">估算 Session 管理</div>
+        <div style="margin-bottom:14px;">
+          <button class="btn-sm btn-primary" @click="generateSession" :disabled="generating">
+            <span x-show="generating" class="loading"></span>
+            <span x-text="generating ? ' 生成中…' : '+ 新建估算 Session'"></span>
+          </button>
+          <span style="font-size:11px;color:#aaa;margin-left:12px;">每次生成创建新 Session，旧数据不受影响</span>
+        </div>
+
+        <div x-show="sessions.length === 0" class="empty">暂无估算记录</div>
+
+        <div class="session-list">
+          <template x-for="s in sessions" :key="s.id">
+            <div class="session-card" :class="{active: selectedSid == s.id}">
+              <div>
+                <strong style="font-size:13px;">Session #<span x-text="s.id"></span></strong>
+                <div class="session-info">创建时间：<span x-text="s.created_at"></span></div>
+              </div>
+              <div class="session-actions">
+                <button class="btn-sm btn-default" @click="viewSession(s.id)">查看估算结果</button>
+                <a class="btn-sm btn-success" style="display:inline-flex;align-items:center;"
+                  :href="`/api/sessions/${s.id}/export`" target="_blank">下载 Excel</a>
+                <button class="btn-sm btn-danger" @click="deleteSession(s.id)">删除</button>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <script>
+  function app() {
+    return {
+      tab: 1,
+      loading: false,
+      toast: { visible: false, msg: '', type: 'info' },
+
+      projects: [],
+      pid: '',
+      project: null,
+      ep: {},   // edit project
+      ee: { doc: '', code: '', cm: '', qa: '', mgmt: '', review: '' },
+
+      showNewProject: false,
+      newProject: { name: '', code: '', leader: '', cm_manager: '', qa_manager: '', team_members: '' },
+
+      showImportModal: false,
+      importNewFile: null,
+      importingNew: false,
+
+      // tab 2
+      configItems: [],
+      codeModules: [],
+
+      // tab 3
+      tasks: [],
+      taskFilter: '',
+      taskTypeFilter: '',
+      importFile: null,
+      importing: false,
+      importResult: '',
+
+      // tab 4
+      sessions: [],
+      selectedSid: '',
+      sessionDetail: null,
+      estTab: 1,
+
+      // tab 5
+      generating: false,
+
+      avgScale(row) {
+        const vals = [row.v1, row.v2, row.v3, row.v4].filter(v => v != null);
+        if (!vals.length) return null;
+        return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+      },
+
+      avgWorkload(row) {
+        const vals = [row.wl1, row.wl2, row.wl3, row.wl4].filter(v => v != null);
+        if (!vals.length) return null;
+        return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+      },
+
+      get filteredTasks() {
+        return this.tasks.filter(t => {
+          const matchText = !this.taskFilter ||
+            t.name.includes(this.taskFilter) ||
+            (t.wbs && t.wbs.includes(this.taskFilter));
+          const matchType = !this.taskTypeFilter || t.task_type === this.taskTypeFilter;
+          return matchText && matchType;
+        });
+      },
+
+      get activityGroups() {
+        if (!this.sessionDetail) return [];
+        const snaps = this.sessionDetail.activity_snapshots;
+        return [
+          { type: 'cm',   label: '配置管理活动', rows: snaps.filter(a => a.activity_type === 'cm') },
+          { type: 'qa',   label: '质量保证活动', rows: snaps.filter(a => a.activity_type === 'qa') },
+          { type: 'mgmt', label: '管理类活动',   rows: snaps.filter(a => a.activity_type === 'mgmt') },
+        ].filter(g => g.rows.length > 0);
+      },
+
+      async init() {
+        await this.loadProjects();
+      },
+
+      showToast(msg, type = 'success') {
+        this.toast = { visible: true, msg, type };
+        setTimeout(() => { this.toast.visible = false; }, 2500);
+      },
+
+      async api(method, path, body, isFormData = false) {
+        const opts = { method };
+        if (body) {
+          if (isFormData) {
+            opts.body = body;
+          } else {
+            opts.headers = { 'Content-Type': 'application/json' };
+            opts.body = JSON.stringify(body);
+          }
+        }
+        const res = await fetch(path, opts);
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ detail: res.statusText }));
+          throw new Error(err.detail || res.statusText);
+        }
+        if (res.status === 204) return null;
+        return res.json();
+      },
+
+      async loadProjects() {
+        this.projects = await this.api('GET', '/api/projects');
+      },
+
+      async onProjectChange() {
+        if (!this.pid) { this.project = null; return; }
+        this.loading = true;
+        try {
+          await Promise.all([
+            this.loadProject(),
+            this.loadConfigItems(),
+            this.loadCodeModules(),
+            this.loadTasks(),
+            this.loadSessions(),
+          ]);
+        } finally {
+          this.loading = false;
+        }
+      },
+
+      async loadProject() {
+        this.project = await this.api('GET', `/api/projects/${this.pid}`);
+        this.ep = { ...this.project };
+        let est = {};
+        try { est = JSON.parse(this.project.estimators || '{}'); } catch {}
+        this.ee = {
+          doc:    Array.isArray(est.doc)  ? est.doc.join(',')  : (est.doc  || ''),
+          code:   Array.isArray(est.code) ? est.code.join(',') : (est.code || ''),
+          cm:     est.cm    || '',
+          qa:     est.qa    || '',
+          mgmt:   est.mgmt  || '',
+          review: est.review || '',
+        };
+      },
+
+      async loadConfigItems() {
+        this.configItems = await this.api('GET', `/api/projects/${this.pid}/config-items`);
+      },
+
+      async loadCodeModules() {
+        this.codeModules = await this.api('GET', `/api/projects/${this.pid}/code-modules`);
+      },
+
+      async loadTasks() {
+        this.tasks = await this.api('GET', `/api/projects/${this.pid}/tasks`);
+      },
+
+      async loadSessions() {
+        this.sessions = await this.api('GET', `/api/projects/${this.pid}/sessions`);
+        if (this.sessions.length && !this.selectedSid) {
+          this.selectedSid = this.sessions[this.sessions.length - 1].id;
+          await this.loadSessionDetail();
+        }
+      },
+
+      async switchTab(n) {
+        this.tab = n;
+        if (!this.pid) return;
+        if (n === 2) { await this.loadConfigItems(); await this.loadCodeModules(); }
+        if (n === 3) { await this.loadTasks(); }
+        if (n === 4 || n === 5) { await this.loadSessions(); }
+      },
+
+      async saveProject() {
+        try {
+          const est = {
+            doc:    this.ee.doc.split(',').map(s=>s.trim()).filter(Boolean),
+            code:   this.ee.code.split(',').map(s=>s.trim()).filter(Boolean),
+            cm:     this.ee.cm.trim(),
+            qa:     this.ee.qa.trim(),
+            mgmt:   this.ee.mgmt.trim(),
+            review: this.ee.review.trim(),
+          };
+          const body = {
+            name:         this.ep.name,
+            code:         this.ep.code,
+            leader:       this.ep.leader,
+            cm_manager:   this.ep.cm_manager,
+            qa_manager:   this.ep.qa_manager,
+            round:        this.ep.round,
+            team_members: this.ep.team_members,
+            estimators:   JSON.stringify(est),
+          };
+          await this.api('PUT', `/api/projects/${this.pid}`, body);
+          this.showToast('保存成功');
+          await this.loadProjects();
+        } catch(e) { this.showToast(e.message, 'error'); }
+      },
+
+      async createProject() {
+        try {
+          if (!this.newProject.name || !this.newProject.code) {
+            this.showToast('项目名称和编号必填', 'error'); return;
+          }
+          const p = await this.api('POST', '/api/projects', this.newProject);
+          await this.loadProjects();
+          this.pid = String(p.id);
+          await this.onProjectChange();
+          this.showNewProject = false;
+          this.newProject = { name:'', code:'', leader:'', cm_manager:'', qa_manager:'', team_members:'' };
+          this.showToast('项目创建成功');
+        } catch(e) { this.showToast(e.message, 'error'); }
+      },
+
+      async createFromExcel() {
+        if (!this.importNewFile) return;
+        this.importingNew = true;
+        try {
+          const fd = new FormData();
+          fd.append('file', this.importNewFile);
+          const r = await this.api('POST', '/api/projects/import-smart', fd, true);
+          await this.loadProjects();
+          this.pid = String(r.project_id);
+          await this.onProjectChange();
+          this.showImportModal = false;
+          this.importNewFile = null;
+          const action = r.created ? '新建并导入' : '已覆盖更新';
+          this.showToast(`${action}完成：${r.task_count} 个任务，${r.config_item_count} 个配置项，${r.code_module_count} 个代码模块`);
+          this.tab = 3;
+        } catch(e) { this.showToast(e.message, 'error'); }
+        finally { this.importingNew = false; }
+      },
+
+      async importExcel() {
+        if (!this.importFile) return;
+        this.importing = true;
+        this.importResult = '';
+        try {
+          const fd = new FormData();
+          fd.append('file', this.importFile);
+          const r = await this.api('POST', `/api/projects/${this.pid}/import`, fd, true);
+          this.importResult = `导入完成：${r.task_count} 个任务，${r.config_item_count} 个配置项，${r.code_module_count} 个代码模块`;
+          await Promise.all([this.loadTasks(), this.loadConfigItems(), this.loadCodeModules()]);
+          this.showToast('Excel 导入成功');
+        } catch(e) { this.showToast(e.message, 'error'); }
+        finally { this.importing = false; }
+      },
+
+      async updateConfigItem(item, field, value) {
+        try {
+          await this.api('PUT', `/api/config-items/${item.id}`, { [field]: value });
+          item[field] = value;
+        } catch(e) { this.showToast(e.message, 'error'); }
+      },
+
+      async updateCodeModule(m, value) {
+        try {
+          await this.api('PUT', `/api/code-modules/${m.id}`, { actual_loc: value });
+          m.actual_loc = value;
+        } catch(e) { this.showToast(e.message, 'error'); }
+      },
+
+      async loadSessionDetail() {
+        if (!this.selectedSid) { this.sessionDetail = null; return; }
+        try {
+          this.sessionDetail = await this.api('GET', `/api/sessions/${this.selectedSid}`);
+        } catch(e) { this.showToast(e.message, 'error'); }
+      },
+
+      async saveSheet1(row, field, value) {
+        try {
+          const res = await this.api('PUT', `/api/sheet1-estimates/${row.id}`, { [field]: value });
+          Object.assign(row, res);
+        } catch(e) { this.showToast(e.message, 'error'); }
+      },
+
+      async saveCodeEst(row, field, value) {
+        try {
+          const res = await this.api('PUT', `/api/code-estimates/${row.id}`, { [field]: value });
+          Object.assign(row, res);
+        } catch(e) { this.showToast(e.message, 'error'); }
+      },
+
+      async saveActivity(row, value) {
+        try {
+          const res = await this.api('PUT', `/api/activity-snapshots/${row.id}`, { workload: value });
+          Object.assign(row, res);
+        } catch(e) { this.showToast(e.message, 'error'); }
+      },
+
+      async saveReview(row, field, value) {
+        try {
+          const res = await this.api('PUT', `/api/review-snapshots/${row.id}`, { [field]: value });
+          Object.assign(row, res);
+        } catch(e) { this.showToast(e.message, 'error'); }
+      },
+
+      async generateSession() {
+        this.generating = true;
+        try {
+          const r = await this.api('POST', `/api/projects/${this.pid}/sessions`, {});
+          await this.loadSessions();
+          this.selectedSid = r.session_id;
+          await this.loadSessionDetail();
+          this.showToast(`Session ${r.session_id} 生成完成（sheet1=${r.sheet1_rows}行）`);
+        } catch(e) { this.showToast(e.message, 'error'); }
+        finally { this.generating = false; }
+      },
+
+      viewSession(sid) {
+        this.selectedSid = sid;
+        this.loadSessionDetail();
+        this.tab = 4;
+        this.estTab = 1;
+      },
+
+      async deleteSession(sid) {
+        if (!confirm(`确认删除 Session #${sid}？此操作不可撤销。`)) return;
+        try {
+          await this.api('DELETE', `/api/sessions/${sid}`);
+          if (this.selectedSid == sid) {
+            this.selectedSid = '';
+            this.sessionDetail = null;
+          }
+          await this.loadSessions();
+          this.showToast('Session 已删除');
+        } catch(e) { this.showToast(e.message, 'error'); }
+      },
+    };
+  }
+  </script>
+</body>
+</html>

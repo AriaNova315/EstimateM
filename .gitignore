@@ -1,0 +1,30 @@
+# macOS
+.DS_Store
+
+# Python environments and caches
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+
+# Runtime data and generated exports
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+generated/
+*.log
+
+# Temporary Excel lock files
+~$*.xlsx
