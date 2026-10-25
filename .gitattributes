@@ -1,0 +1,2 @@
+# Preserve Windows batch line endings on checkout, including on macOS.
+start_windows.cmd text eol=crlf

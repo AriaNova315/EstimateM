@@ -15,6 +15,17 @@ EstimateM：项目配置项规模及工作量估算记录生成系统。给定�
 ### 当前阶段（更新于 2026-06-29）
 **Phase 5 已完成，全流程可用。**
 
+### Windows 离线交付（2026-10-26）
+
+- 已按批准方案完成本地 Alpine.js 3.14.1、仅监听 `127.0.0.1:8001`、关闭 `/docs` 与 `/redoc`、Windows 启动脚本及交付工具。
+- 正式操作说明：`DEPLOY_WINDOWS_OFFLINE.md`；验证范围和未完成项：`DEPLOYMENT_VERIFICATION.md`。
+- Windows 基线：标准 CPython 3.13.17 x64，使用 `requirements-win-py313.lock.txt`（含 wheel SHA-256）；锁文件是按 Windows 目标跨平台解析的候选基线，仍需 Windows 实机验收。
+- Mac 继续系统 Python + `python3 run.py`，不安装 Windows 锁文件；Windows 独立 `.venv`，双击 `start_windows.cmd`。不变更估算算法或导入导出规则。
+- 直接沿用 `项目相关信息表.xlsx`：使用人员复制样例后修改，不新增空白模板。输出参考 xlsx 不是运行时必需资源。
+- 各电脑全新建库，不交付现有 DB/历史导出；只打包明确允许列表。wheelhouse 与 Python 安装程序由部署人员在联网 Windows 准备，不放入 Git。
+- 不依赖开发分析脚本中的作者电脑绝对路径。仓库仍保持私有，未来公开前须单独检查样例、文档及历史并取得公开授权；不新增 Actions。
+- 下一步：部署人员执行 Windows 完整离线安装、双击启动、浏览器与 Excel/WPS 验收，记录结果后才能标记 Windows 交付验收完成。
+
 已确认：
 - ✅ 输入 Excel 扩展字段（项目信息 19 列、进度计划新增工期/工作量/资源名称、配置项清单新增类型/实际页数、新增代码模块 Sheet）
 - ✅ 输出 10-Sheet Excel 结构（参照样例文件，动态行数全量 openpyxl 生成）

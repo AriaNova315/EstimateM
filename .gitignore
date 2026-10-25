@@ -23,8 +23,15 @@ htmlcov/
 *.db-*
 *.sqlite
 *.sqlite3
+*.sqlite-*
+*.sqlite3-*
 generated/
 *.log
+wheelhouse/
+dist/
+.prepare-venv/
+.verify-venv/
 
 # Temporary Excel lock files
 ~$*.xlsx
+.gstack/

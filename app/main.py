@@ -15,7 +15,7 @@ async def lifespan(app: FastAPI):
     await close_db()
 
 
-app = FastAPI(title="EstimateM", lifespan=lifespan)
+app = FastAPI(title="EstimateM", lifespan=lifespan, docs_url=None, redoc_url=None)
 
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
